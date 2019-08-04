@@ -28,13 +28,13 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ZipFile: |
+        ZipFile: !Sub |
           import json
           import boto3
 
           def dynamo_itemcreate(team_name, team_country, team_desc, team_rating):
               dynamodb = boto3.client('dynamodb')
-              db_name = "Challenge_DB"
+              db_name = "Challenge_${MyName}"
               dynamodb.put_item(TableName=db_name, Item={'country':{'S':team_country}, 'team':{'S':team_name}, 'desc':{'S':team_desc}, 'rating':{'S':team_rating}})
 
           def lambda_handler(event, context):
@@ -70,8 +70,8 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - lambda:*
-            Resource: '*'
+            - dynamodb:*
+            Resource: !Sub "arn:aws:dynamodb:*:*:table/Challenge_${MyName}"
 
 
   APIPermission:
@@ -100,13 +100,13 @@ Resources:
     Properties:
       Name: !Sub RestTechChallenge1_${MyName}
       EndpointConfiguration:
-        Types: 
+        Types:
           - REGIONAL
 
   ApiResource:
     Type: 'AWS::ApiGateway::Resource'
     Properties:
-      ParentId: !GetAtt 
+      ParentId: !GetAtt
         - ApiRestApi
         - RootResourceId
       RestApiId: !Ref ApiRestApi
@@ -122,12 +122,12 @@ Resources:
       Integration:
         Type: AWS
         IntegrationHttpMethod: POST
-        Uri: !Join 
+        Uri: !Join
           - ''
           - - 'arn:aws:apigateway:'
             - !Ref 'AWS::Region'
             - ':lambda:path/2015-03-31/functions/'
-            - !GetAtt 
+            - !GetAtt
               - LambdaFunction
               - Arn
             - /invocations
@@ -158,14 +158,14 @@ Resources:
       Schema:
         title: Team
         type: object
-        properties: 
+        properties:
           team_country:
             type: string
           team_name:
             type: string
           team_desc:
             type: string
-          team_rating: 
+          team_rating:
             type: string
 
   ApiDeployment:
@@ -182,7 +182,7 @@ Resources:
 Outputs:
   RootUrl:
     Description: Root URL of the API gateway
-    Value: !Join 
+    Value: !Join
       - ''
       - - 'https://'
         - !Ref ApiRestApi
